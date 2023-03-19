@@ -1,0 +1,36 @@
+name: Main
+
+on: push
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+    container: gchr.io/coldteastudios/fteqw-build-image:latest
+    steps:
+      - run: echo "Running Linux x86_64 Build"
+      - uses: actions/checkout@v3
+    
+      - run: mkdir build
+      
+      - run: cmake -DCMAKE_BUILD_TYPE=Release ..
+        working-directory: ./build
+        
+      - run: make -j4
+        working-directory: ./build
+              
+      - run: rm -rf CMake* cmake* Makefile
+        working-directory: ./build
+      
+      - uses: actions/upload-artifact@v3
+        with:
+          name: fte-linux-amd64-$GITHUB_SHA
+          path: build/*
+          retention-days: 3
+  release:
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
